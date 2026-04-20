@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!--
+Copyright (c) 2026 Project CHIP Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<configurator>
+  <domain name="Lighting"/>
+
+  <enum name="EffectSourceEnum" type="enum8">
+    <cluster code="0x0305"/>
+    <item value="0x00" name="Internal"/>
+    <item value="0x01" name="SoundBased"/>
+  </enum>
+
+  <enum name="EffectColorModeEnum" type="enum8">
+    <cluster code="0x0305"/>
+    <item value="0x00" name="Level"/>
+    <item value="0x01" name="XY"/>
+    <item value="0x02" name="XYAndLevel"/>
+    <item value="0x03" name="HS"/>
+    <item value="0x04" name="HSAndLevel"/>
+    <item value="0x05" name="EHUE"/>
+    <item value="0x06" name="EHUEAndLevel"/>
+  </enum>
+
+  <struct name="EffectStruct" apiMaturity="provisional">
+    <cluster code="0x0305"/>
+    <item fieldId="0" name="EffectID" type="int16u"/>
+    <item fieldId="1" name="Source" type="EffectSourceEnum"/>
+    <item fieldId="2" name="Label" type="char_string" length="32" minLength="1"/>
+    <item fieldId="3" name="MaxSpeed" type="int16u" min="1"/>
+    <item fieldId="4" name="DefaultSpeed" type="int16u" min="1"/>
+    <item fieldId="5" name="SupportsColorPalette" type="boolean"/>
+  </struct>
+
+  <struct name="EffectColorStruct" apiMaturity="provisional">
+    <cluster code="0x0305"/>
+    <item fieldId="0" name="Level" type="int8u" isNullable="true"/>
+    <item fieldId="1" name="X" type="int16u" isNullable="true" max="65279"/>
+    <item fieldId="2" name="Y" type="int16u" isNullable="true" max="65279"/>
+    <item fieldId="3" name="Hue" type="int8u" isNullable="true"/>
+    <item fieldId="4" name="EnhancedHue" type="int16u" isNullable="true"/>
+    <item fieldId="5" name="Saturation" type="int8u" isNullable="true"/>
+  </struct>
+
+  <cluster apiMaturity="provisional">
+    <name>Dynamic Lighting</name>
+    <domain>Lighting</domain>
+    <description>This cluster activates and controls manufacturer-specific dynamic lighting effects.</description>
+    <code>0x0305</code>
+    <define>DYNAMIC_LIGHTING_CLUSTER</define>
+    <client tick="false" init="false">true</client>
+    <server tick="false" init="false">true</server>
+    <globalAttribute side="either" code="0xFFFD" value="1"/>
+
+    <attribute side="server" code="0x0000" name="AvailableEffects" define="AVAILABLE_EFFECTS" type="array"
+               entryType="EffectStruct" length="128" minLength="1">
+      <mandatoryConform/>
+    </attribute>
+    <attribute side="server" code="0x0001" name="CurrentEffectID" define="CURRENT_EFFECT_ID" type="int16u" isNullable="true">
+      <mandatoryConform/>
+    </attribute>
+    <attribute side="server" code="0x0002" name="CurrentSpeed" define="CURRENT_SPEED" type="int16u" isNullable="true" writable="true">
+      <mandatoryConform/>
+    </attribute>
+
+    <command source="client" code="0x00" name="StartEffect">
+      <arg id="0" name="EffectID" type="int16u"/>
+      <arg id="1" name="Speed" type="int16u"/>
+      <arg id="2" name="ColorMode" type="EffectColorModeEnum" optional="true"/>
+      <arg id="3" name="ColorPalette" type="EffectColorStruct" array="true" length="16" minLength="1" optional="true"/>
+      <mandatoryConform/>
+    </command>
+    <command source="client" code="0x01" name="StopEffect">
+      <mandatoryConform/>
+    </command>
+  </cluster>
+</configurator>
