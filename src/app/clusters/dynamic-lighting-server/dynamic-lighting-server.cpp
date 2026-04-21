@@ -28,8 +28,6 @@
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 
-#include <limits>
-
 #include <clusters/ColorControl/Enums.h>
 #include <clusters/LevelControl/Attributes.h>
 #include <clusters/OnOff/Attributes.h>
@@ -46,6 +44,7 @@ bool emberAfContainsServer(chip::EndpointId endpoint, chip::ClusterId clusterId)
 namespace {
 
 Delegate * gDelegate = nullptr;
+constexpr size_t kMaxAvailableEffects = 128;
 
 bool IsEndOfListError(CHIP_ERROR err)
 {
@@ -202,7 +201,7 @@ CHIP_ERROR DynamicLightingServer::EncodeAvailableEffects(EndpointId endpoint, At
 
     return encoder.EncodeList([endpoint](const auto & listEncoder) -> CHIP_ERROR {
         size_t encodedCount = 0;
-        for (size_t index = 0; index < std::numeric_limits<size_t>::max(); ++index)
+        for (size_t index = 0; index < kMaxAvailableEffects; ++index)
         {
             EffectInfo effect;
             CHIP_ERROR err = gDelegate->GetEffectByIndex(endpoint, index, effect);
@@ -239,7 +238,7 @@ bool DynamicLightingServer::TryGetEffectById(EndpointId endpoint, uint16_t effec
         return false;
     }
 
-    for (size_t index = 0; index < std::numeric_limits<size_t>::max(); ++index)
+    for (size_t index = 0; index < kMaxAvailableEffects; ++index)
     {
         CHIP_ERROR err = gDelegate->GetEffectByIndex(endpoint, index, effect);
         if (IsEndOfListError(err))
@@ -386,16 +385,15 @@ Status DynamicLightingServer::ValidateColorSettings(EndpointId endpoint, const E
         return Status::InvalidCommand;
     }
 
-    size_t paletteSize = 0;
-    VerifyOrReturnValue(commandData.colorPalette.Value().ComputeSize(&paletteSize) == CHIP_NO_ERROR && paletteSize > 0,
-                        Status::InvalidCommand);
-
     auto iter = commandData.colorPalette.Value().begin();
+    bool sawPaletteEntry = false;
     while (iter.Next())
     {
+        sawPaletteEntry = true;
         VerifyOrReturnValue(ValidatePaletteEntry(iter.GetValue(), colorMode), Status::InvalidCommand);
     }
     VerifyOrReturnValue(iter.GetStatus() == CHIP_NO_ERROR, Status::InvalidCommand);
+    VerifyOrReturnValue(sawPaletteEntry, Status::InvalidCommand);
 
     return Status::Success;
 }

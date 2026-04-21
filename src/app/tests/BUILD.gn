@@ -17,6 +17,7 @@ import("//build_overrides/chip.gni")
 import("//build_overrides/pigweed.gni")
 
 import("${chip_root}/build/chip/chip_test_suite.gni")
+import("${chip_root}/src/app/clusters/dynamic-lighting-server/app_config_dependent_sources.gni")
 import("${chip_root}/src/app/icd/icd.gni")
 import("${chip_root}/src/crypto/crypto.gni")
 import("${chip_root}/src/platform/device.gni")
@@ -317,4 +318,37 @@ chip_test_suite("tests") {
   if (chip_device_platform == "zephyr") {
     cflags += [ "-Wno-error=stack-usage=" ]
   }
+}
+
+chip_test_suite("dynamic-lighting-tests") {
+  output_name = "TestDynamicLightingCluster"
+
+  test_sources = [
+    "${chip_root}/src/app/clusters/dynamic-lighting-server/tests/TestDynamicLightingCluster.cpp",
+  ]
+
+  sources = []
+  foreach(file, app_config_dependent_sources) {
+    sources += [ "${chip_root}/src/app/clusters/dynamic-lighting-server/" + file ]
+  }
+  sources += [
+    "${chip_root}/src/app/clusters/dynamic-lighting-server/CodegenIntegration.cpp",
+    "${chip_root}/src/app/clusters/dynamic-lighting-server/dynamic-lighting-server.cpp",
+  ]
+
+  defines = [ "MATTER_DM_DYNAMIC_LIGHTING_CLUSTER_SERVER_ENDPOINT_COUNT=1" ]
+
+  public_deps = [
+    ":app-test-stubs",
+    "${chip_root}/src/app:attribute-access",
+    "${chip_root}/src/app:interaction-model",
+    "${chip_root}/src/app/data-model-provider/tests:encode-decode",
+    "${chip_root}/src/app/server",
+    "${chip_root}/src/app/server-cluster",
+    "${chip_root}/src/app/util/mock:mock_ember",
+    "${chip_root}/src/lib/core:error",
+    "${chip_root}/src/lib/support",
+    "${chip_root}/zzz_generated/app-common/clusters/ColorControl",
+    "${chip_root}/zzz_generated/app-common/clusters/DynamicLighting",
+  ]
 }
